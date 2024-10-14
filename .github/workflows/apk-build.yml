@@ -19,7 +19,7 @@ on:
 env:
   # https://flet.dev/docs/publish#versioning
   MAJOR_VERSION: 0
-  YEARMONTH: ${{ format('{0}{1}', github.event.repository.pushed_at | date('yy'), github.event.repository.pushed_at | date('MM')) }}
+  PUSHED_YEARMONTH: ${{ format('{0}{1}', github.event.repository.pushed_at, 'yyMM') }}
   BUILD_NUMBER: ${{ github.run_number }}
   PYTHON_VERSION: 3.12.2
   FLUTTER_VERSION: 3.24.0
@@ -89,7 +89,7 @@ jobs:
         flutter config --no-analytics  # disable flutter analytics
         cd ${{ matrix.project }}       # 프로젝트 디렉토리로 이동
         # adapt the command to your needs - https://flet.dev/docs/publish 
-        flet build apk --verbose --build-version '${{ env.MAJOR_VERSION }}.${{ env.YEARMONTH }}.${{ env.BUILD_NUMBER }}'
+        flet build apk --verbose --build-version '${{ env.MAJOR_VERSION }}.${{ env.PUSHED_YEARMONTH }}.${{ env.BUILD_NUMBER }}'
 
     - name: Upload APK Artifact
       uses: actions/upload-artifact@v4.3.4  # https://github.com/marketplace/actions/upload-a-build-artifact
