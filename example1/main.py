@@ -50,7 +50,7 @@ class WebtoonRecommendView(BaseRootView):
 
 
 def main(page: ft.Page) -> None:
-    page.adaptive = True  # 적응형 옵션 활성화
+    # page.adaptive = True  # 적응형 옵션 활성화
     page.padding = 0
     page.window.min_width = 480
 
