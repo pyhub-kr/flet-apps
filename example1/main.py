@@ -65,10 +65,3 @@ def main(page: ft.Page) -> None:
 
 ft.app(target=main)
 
-# TODO: Drawer
-# TODO: API 호출
-# TODO: 인증 (JWT, Token, Session)
-# TODO: 설정
-# TODO: Push Notification
-# TODO: 파이썬 코드만 업데이트할려면 ???
-# TODO: splash, icon, 각종 설정
