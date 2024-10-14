@@ -22,7 +22,7 @@ env:
   PUSHED_YEARMONTH: ${{ format('{0}{1}', github.event.repository.pushed_at, 'yyMM') }}
   BUILD_NUMBER: ${{ github.run_number }}
   PYTHON_VERSION: 3.12.2
-  FLUTTER_VERSION: 3.24.0
+  FLUTTER_VERSION: 3.22.2
 
 jobs:
   changes:
