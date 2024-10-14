@@ -1,11 +1,11 @@
 import asyncio
-from dataclasses import field, dataclass
-from datetime import date
-
-import httpx
 import repath
 from abc import abstractmethod, ABC
-from typing import Optional, List, Type
+from dataclasses import dataclass, field
+from datetime import date
+from typing import Optional, List, Type, cast
+
+import httpx
 
 import flet as ft
 
@@ -33,6 +33,11 @@ class Song:
 
 class BaseView(ft.View, ABC):
     route: Optional[str] = None
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        if self.route is None:
+            self.route = self.__class__.route
 
     @abstractmethod
     def build(self) -> None:
@@ -158,17 +163,17 @@ class MelonView(BaseView):
                     [
                         ft.Image(
                             src=song.커버이미지_주소,
-                            width=100,
-                            height=100,
+                            width=150,
+                            height=150,
                             fit=ft.ImageFit.COVER,
                         ),
-                        ft.Text(
-                            song.곡명,
-                            style=ft.TextStyle(weight=ft.FontWeight.BOLD),
-                            overflow=ft.TextOverflow.ELLIPSIS,
-                        ),
+                        # ft.Text(
+                        #     song.곡명,
+                        #     style=ft.TextStyle(weight=ft.FontWeight.BOLD),
+                        #     overflow=ft.TextOverflow.ELLIPSIS,
+                        # ),
                     ],
-                    spacing=0,
+                    spacing=3,
                     alignment=ft.MainAxisAlignment.CENTER,
                 ),
                 width=150,
@@ -177,29 +182,33 @@ class MelonView(BaseView):
                 alignment=ft.alignment.center,
             ),
             # on_tap=lambda _: self.alert(f"{song.곡명} - {song.artist_name}"),
-            on_tap=lambda _: self.page.launch_url(
+            on_tap=lambda __: self.page.launch_url(
                 f"https://www.melon.com/song/detail.htm?songId={song.곡일련번호}"
             ),
             mouse_cursor=ft.MouseCursor.CLICK,
         )
 
 
-def init_routes(page: ft.Page, view_cls_list: List[Type[BaseView]]) -> None:
-    initial_route: str = RootView.route
+def init_routes(
+    page: ft.Page, root_view_cls: Type[BaseView], view_cls_list: List[Type[BaseView]]
+) -> None:
+    initial_route: str = root_view_cls.route
+    assert root_view_cls in view_cls_list
 
     def on_route_change(e: ft.RouteChangeEvent) -> None:
         # print(f"Route changed to {e}")
         next_url: str = e.route
 
-        root_view_cls = view_cls_list[0]
-
-        if (kwargs := root_view_cls.test_route(next_url)) is not None:
-            if len(page.views) > 1:
-                del page.views[1:]
-            else:
-                page.views.append(root_view_cls(**kwargs))
+        # 같은 URL에 대해서 중복 View를 허용하지 않습니다.
+        # 기존 View 히스토리 중에 매칭되는 URL이 있으면 해당 페이지로 history pop
+        for view_index, view in enumerate(page.views):
+            view_cls = cast(BaseView, view.__class__)
+            if view_cls.test_route(next_url) is not None:
+                del page.views[view_index + 1 :]
+                break
         else:
-            for view_cls in view_cls_list[1:]:
+            # URL에 매칭되는 View 클래스로 화면 전환
+            for view_cls in view_cls_list:
                 if (kwargs := view_cls.test_route(next_url)) is not None:
                     page.views.append(view_cls(**kwargs))
                     break
@@ -207,7 +216,7 @@ def init_routes(page: ft.Page, view_cls_list: List[Type[BaseView]]) -> None:
                 page.open(
                     ft.SnackBar(
                         content=ft.Text(
-                            f"지정 {next_url}에 매칭되는 View가 없습니다.",
+                            value=f"지정 {next_url}에 매칭되는 View가 없습니다.",
                             color=ft.colors.WHITE,
                         ),
                         bgcolor=ft.colors.RED,
@@ -218,7 +227,8 @@ def init_routes(page: ft.Page, view_cls_list: List[Type[BaseView]]) -> None:
 
     def view_pop(e: ft.ViewPopEvent) -> None:
         page.views.pop()  # 리스트 마지막 요소를 제거.
-        page.update()
+        top_view = page.views[-1]
+        page.go(top_view.route)
 
     page.on_route_change = on_route_change
     page.on_view_pop = view_pop
@@ -229,7 +239,12 @@ def init_routes(page: ft.Page, view_cls_list: List[Type[BaseView]]) -> None:
 
 
 def main(page: ft.Page) -> None:
-    init_routes(page, view_cls_list=[RootView, BlogHome, BlogPostDetailView, MelonView])
+    init_routes(
+        page,
+        root_view_cls=RootView,
+        view_cls_list=[RootView, BlogHome, BlogPostDetailView, MelonView],
+    )
 
 
-ft.app(main)
+if __name__ == "__main__":
+    ft.app(main)
